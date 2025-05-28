@@ -13,6 +13,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editWord, setEditWord] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [wordToDelete, setWordToDelete] = useState(null);
 
   useEffect(() => {
     fetchWords();
@@ -73,18 +75,23 @@ function App() {
     }
   };
 
-  const handleDeleteWord = async (id) => {
-    if (window.confirm("Are you sure you want to delete this word?")) {
-      try {
-        await wordAPI.deleteWord(id);
-        const updatedWords = words.filter((word) => word._id !== id);
-        setWords(updatedWords);
-        setFilteredWords(updatedWords);
-        toast.success("Word deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting word:", error);
-        toast.error("Error deleting word");
-      }
+  const handleDeleteWord = (id) => {
+    setWordToDelete(id);
+    setShowDeleteModal(true);
+  };
+  const confirmDeleteWord = async () => {
+    try {
+      await wordAPI.deleteWord(wordToDelete);
+      const updatedWords = words.filter((word) => word._id !== wordToDelete);
+      setWords(updatedWords);
+      setFilteredWords(updatedWords);
+      toast.success("Word deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting word:", error);
+      toast.error("Error deleting word");
+    } finally {
+      setShowDeleteModal(false);
+      setWordToDelete(null);
     }
   };
 
@@ -149,7 +156,32 @@ function App() {
         onSubmit={handleFormSubmit}
         editWord={editWord}
       />
-      <ToastContainer />
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-80 text-center">
+            <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
+            <p>Are you sure you want to delete this word?</p>
+            <div className="mt-6 flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setWordToDelete(null);
+                }}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteWord}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <ToastContainer position="bottom-right" />
     </div>
   );
 }
